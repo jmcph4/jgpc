@@ -7,8 +7,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include "proc.h"
-
 /* IP protocols defined in RFC 1700 */
 enum protocol_type
 {
@@ -127,8 +125,15 @@ struct serverinfo
     FILE* listen_fp;
 };
 
+struct clientinfo
+{
+    in_addr_t addr;
+    int port;
+    char* hostname;
+};
+
 int startserver_mp(struct serverinfo* server_info,
-        struct procinfo* process_info);
+        int (callback)(void*, size_t, void**, struct clientinfo*));
 
 #endif /* NET_H_ */
 

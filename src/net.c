@@ -15,10 +15,12 @@
 #include "input.h"
 #include "net.h"
 
+#define MAX_BUF_LEN 4096
+
 int startserver_mp(struct serverinfo* server_info,
-        struct procinfo* process_info)
+        int (callback)(void*, size_t, void**, struct clientinfo*))
 {
-    if(server_info == NULL || process_info == NULL) /* null guard */
+    if(server_info == NULL || callback == NULL) /* null guard */
     {
         return -1;
     }
@@ -40,8 +42,10 @@ int startserver_mp(struct serverinfo* server_info,
     {
         int reuse_val = 1;
 
-        if(setsockopt(server_info->socket_info.fd, SOL_SOCKET, SO_REUSEADDR,
-                    &reuse_val, sizeof(int)) == -1)
+        res = setsockopt(server_info->socket_info.fd, SOL_SOCKET, SO_REUSEADDR,
+                    &reuse_val, sizeof(int));
+        
+        if(res == -1)
         {
             return -1;
         }
@@ -61,14 +65,18 @@ int startserver_mp(struct serverinfo* server_info,
         return -1;
     }
 
-    /* listen on socket */
-    res = listen(server_info->socket_info.fd, SOMAXCONN);
-
-    if(res == -1)
+    /* if TCP */
+    if(server_info->socket_info.type == SOCK_STREAM)
     {
-        return -1;
-    }
+        /* listen on socket */
+        res = listen(server_info->socket_info.fd, SOMAXCONN);
 
+        if(res == -1)
+        {
+            return -1;
+        }
+    }
+   
     int num_conns = 0; /* connec */
 
     /* main service loop */
@@ -85,55 +93,69 @@ int startserver_mp(struct serverinfo* server_info,
         {
             return -1;
         }
-
-        FILE* client_fp = fdopen(fd, "rw");
-
+        
         num_conns++; /* increment connection counter */
 
+        struct clientinfo client_info;
+        client_info.addr = from_addr.sin_addr.s_addr;
+
         /* get hostname of client */
-        char hostname[128];
+        client_info.hostname = calloc(128, sizeof(char));
+
+        if(client_info.hostname == NULL) /* allocation check */
+        {
+            return -1;
+        }
+
         res = getnameinfo((struct sockaddr*)&from_addr, from_addr_size,
-                hostname, 128, NULL, 0, 0);
+                client_info.hostname, 128, NULL, 0, 0);
 
         if(res != 0)
         {
             return -1;
         }
+
+        pid_t pid = fork();
+
+        if(pid == 0)
+        {
+            char* resp_buf = NULL;
+            int resp_buf_len = 0;
         
-        /* DEBUG */
-        printf("Accepted connection from %s (%s) on port %d\n",
-                inet_ntoa(from_addr.sin_addr), hostname,
-                ntohs(from_addr.sin_port));
+            while(true)
+            {
+                char* client_data = calloc(MAX_BUF_LEN, sizeof(char));
 
-        res = spawn(process_info);
+                /* get data from client */
+                res = recv(fd, client_data, MAX_BUF_LEN, 0);
 
-        if(res == -1)
-        {
-            return -1;
-        }
+                if(res == -1 || res == 0)
+                {
+                    break;
+                }
+ 
+                resp_buf_len = callback(client_data, MAX_BUF_LEN,
+                        (void**)&resp_buf, &client_info);
 
-        char* resp_buf = NULL;
-        bool worker_eof = false;
+                if(resp_buf_len == -1)
+                {
+                    break;
+                }
 
-        res = grabline(&resp_buf, &worker_eof, process_info->stdout);
+                /* send output of worker back to client */
+                res = send(fd, resp_buf, resp_buf_len, 0);
 
-        if(res == -1)
-        {
-            return -1;
-        }
+                if(res == -1)
+                {
+                    break;
+                }
 
-        res = fwrite(resp_buf, sizeof(char), strlen(resp_buf), client_fp);
+                free(client_data);
+                free(resp_buf);
+            }
 
-        if(res == -1)
-        {
-            return -1;
-        }
-
-        int worker_status = stop(process_info); /* wind down worker */
-
-        if(worker_status == -1)
-        {
-            return -1;
+            close(fd);
+            exit(0);
         }
     }
 
