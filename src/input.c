@@ -5,6 +5,47 @@
 
 #include "input.h"
 
+int grabeof(char** buf, FILE* fp)
+{
+    if(buf == NULL || fp == NULL) /* null guard */
+    {
+        return -1;
+    }
+
+    char c = '\0';
+    size_t len = 0;
+    size_t cap = INIT_BUF_LEN;
+    char* buffer = calloc(cap, sizeof(char));
+
+    if(buffer == NULL) /* allocation check */
+    {
+        return -1;
+    }
+
+    while(true)
+    {
+        c = fgetc(fp);
+
+        if(c == EOF) /* handle EOF */
+        {
+            break;
+        }
+
+        if(len + 1 == cap) /* expand buffer */
+        {
+            cap *= BUF_GROWTH_FACTOR;
+            buffer = realloc(buffer, cap);
+        }
+
+        buffer[len] = c;
+        len++;
+    }
+
+    *buf = buffer;
+
+    return len;
+}
+
 int grabuntil(char** buf, bool* eof, char* delims, size_t num_delims, FILE* fp)
 {
     /* null guard */
