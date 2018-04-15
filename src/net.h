@@ -123,6 +123,7 @@ struct serverinfo
     enum protocol_type protocol;
     struct socketinfo socket_info;
     FILE* listen_fp;
+    size_t max_buf_len;
 };
 
 struct clientinfo

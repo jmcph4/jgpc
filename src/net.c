@@ -15,8 +15,6 @@
 #include "input.h"
 #include "net.h"
 
-#define MAX_BUF_LEN 4096
-
 int startserver_mp(struct serverinfo* server_info,
         int (callback)(void*, size_t, void**, struct clientinfo*))
 {
@@ -124,18 +122,19 @@ int startserver_mp(struct serverinfo* server_info,
         
             while(true)
             {
-                char* client_data = calloc(MAX_BUF_LEN, sizeof(char));
+                char* client_data = calloc(server_info->max_buf_len,
+                        sizeof(char));
 
                 /* get data from client */
-                res = recv(fd, client_data, MAX_BUF_LEN, 0);
+                res = recv(fd, client_data, server_info->max_buf_len, 0);
 
                 if(res == -1 || res == 0)
                 {
                     break;
                 }
  
-                resp_buf_len = callback(client_data, MAX_BUF_LEN,
-                        (void**)&resp_buf, &client_info);
+                resp_buf_len = callback(client_data, res, (void**)&resp_buf,
+                        &client_info);
 
                 if(resp_buf_len == -1)
                 {
