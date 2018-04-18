@@ -136,6 +136,8 @@ int spawn(struct procinfo* process_info)
         process_info->stdin = to;
         process_info->stdout = from;
         process_info->stderr = err;
+
+        process_info->pid = pid;
     }
     else /* error */
     {
