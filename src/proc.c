@@ -19,9 +19,6 @@ int spawn(struct procinfo* process_info)
     char* prog = process_info->prog;
     int argc = process_info->argc;
     char** argv = process_info->argv;
-    FILE* to = process_info->stdin;
-    FILE* from = process_info->stdout;
-    FILE* err = process_info->stderr;
 
     if(argc == 0) /* bounds check */
     {
@@ -112,21 +109,21 @@ int spawn(struct procinfo* process_info)
         close(from_fds[1]); /* close write end */
         close(err_fds[1]); /* close write end */
 
-        to = fdopen(to_fds[1], "w");
+        FILE* to = fdopen(to_fds[1], "w");
 
         if(to == NULL)
         {
             return -1;
         }
 
-        from = fdopen(from_fds[0], "r");
+        FILE* from = fdopen(from_fds[0], "r");
 
         if(from == NULL)
         {
             return -1;
         }
 
-        err = fdopen(err_fds[0], "r");
+        FILE* err = fdopen(err_fds[0], "r");
 
         if(err == NULL)
         {
