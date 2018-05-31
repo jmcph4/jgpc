@@ -110,6 +110,7 @@ int startserver_mp(struct serverinfo* server_info,
 
         if(res != 0)
         {
+            free(client_info.hostname);
             return -1;
         }
 
@@ -125,11 +126,17 @@ int startserver_mp(struct serverinfo* server_info,
                 char* client_data = calloc(server_info->max_buf_len,
                         sizeof(char));
 
+                if(client_data == NULL)
+                {
+                    break;
+                }
+
                 /* get data from client */
                 res = recv(fd, client_data, server_info->max_buf_len, 0);
 
                 if(res == -1 || res == 0)
                 {
+                    free(client_data);
                     break;
                 }
  
@@ -138,6 +145,7 @@ int startserver_mp(struct serverinfo* server_info,
 
                 if(resp_buf_len == -1)
                 {
+                    free(client_data);
                     break;
                 }
 
@@ -146,6 +154,8 @@ int startserver_mp(struct serverinfo* server_info,
 
                 if(res == -1)
                 {
+                    free(client_data);
+                    free(resp_buf);
                     break;
                 }
 
@@ -153,8 +163,18 @@ int startserver_mp(struct serverinfo* server_info,
                 free(resp_buf);
             }
 
+            free(client_info.hostname);
+
             close(fd);
             exit(0);
+        }
+        else if(pid > 0)
+        {
+            free(client_info.hostname);
+        }
+        else
+        {
+            return -1;
         }
     }
 
