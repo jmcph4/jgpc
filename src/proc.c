@@ -8,7 +8,7 @@
 
 #include "proc.h"
 
-int spawn(struct procinfo* process_info)
+int process_spawn(struct procinfo* process_info)
 {
     if(process_info == NULL) /* null guard */
     {
@@ -144,7 +144,7 @@ int spawn(struct procinfo* process_info)
     return 0;
 }
 
-int stop(struct procinfo* process_info)
+int process_stop(struct procinfo* process_info)
 {
     if(process_info == NULL) /* null guard */
     {

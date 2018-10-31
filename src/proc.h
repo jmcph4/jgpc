@@ -18,8 +18,8 @@ struct procinfo
     FILE* stderr;
 };
 
-int spawn(struct procinfo* process_info);
-int stop(struct procinfo* process_info);
+int process_spawn(struct procinfo* process_info);
+int process_stop(struct procinfo* process_info);
 
 #endif /* PROC_H_ */
 
