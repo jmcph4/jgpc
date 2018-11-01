@@ -136,5 +136,8 @@ struct clientinfo
 int startserver_mp(struct serverinfo* server_info,
         int (callback)(void*, size_t, void**, struct clientinfo*));
 
+int startserver_mt(struct serverinfo* server_info,
+        int (callback)(void*, size_t, void**, struct clientinfo*));
+
 #endif /* NET_H_ */
 
