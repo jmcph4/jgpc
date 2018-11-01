@@ -29,13 +29,22 @@ int thread_stop(struct threadinfo* thread_info)
         return -1;
     }
 
-    int res = pthread_join(thread_info->tid, &thread_info->fn_retval);
+    int res = 0;
+
+    if(thread_info->detach)
+    {
+        res = pthread_detach(thread_info->tid);
+    }
+    else
+    {
+        res = pthread_join(thread_info->tid, &thread_info->fn_retval);
+    }
 
     if(res != 0)
     {
         return -1;
     }
 
-    return 0;
+        return 0;
 }
 
